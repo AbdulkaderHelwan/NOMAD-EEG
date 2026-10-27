@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nomad-eeg"
+version = "1.0.0"
+description = "NOMAD-EEG: Native Omni-Montage Adaptive Diffusion, a montage-agnostic EEG foundation model"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "Abdulkader Helwan" }, { name = "Khadidja Henni" }, { name = "Lina Abou-Abbas" }]
+dependencies = ["torch>=2.1", "numpy", "scipy", "scikit-learn", "mne>=1.4"]
+
+[project.urls]
+Paper = "https://arxiv.org/abs/2610.35246"
+Repository = "https://github.com/AbdulkaderHelwan/NOMAD-EEG"
+
+[tool.setuptools]
+packages = ["nomad_eeg"]
