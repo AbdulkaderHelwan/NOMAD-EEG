@@ -1,6 +1,6 @@
 """Embed EEG recordings with three different montages using the same pre-trained weights.
 
-    python examples/quickstart.py [path/to/nomad_eeg_base.pt]
+    python examples/quickstart.py path/to/nomad_eeg_base.pt
 
 Random signals stand in for real data here; for real recordings, preprocess them first
 (nomad_eeg.preprocess + nomad_eeg.RobustScaler, or scripts/prepare_dataset.py).

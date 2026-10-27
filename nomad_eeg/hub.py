@@ -37,7 +37,7 @@ def load_pretrained(path: str | Path | None = None, device: str | torch.device =
     if path is None:
         url = url or WEIGHTS_URL
         if not url.startswith("http"):
-            raise RuntimeError("No download link configured: download the weights manually "
+            raise RuntimeError("Download the weights from https://lauedu74602-my.sharepoint.com/:f:/g/personal/abedelkader_helwan_lau_edu_lb/IgBQJQX6xN9QT73Qjxc8KeG7AbqwUOgx-9PocZmKWBN2T4Y?e=wa1ipy "
                                "and pass load_pretrained(path=...)")
         dst = Path(torch.hub.get_dir()) / "checkpoints" / WEIGHTS_FILE
         if not dst.exists():

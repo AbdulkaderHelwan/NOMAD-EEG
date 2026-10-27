@@ -292,14 +292,14 @@ footer .wrap { padding-block: 28px; display: flex; justify-content: space-betwee
       <div class="stack">
         <p>The release contains the EMA weights of the NOMAD-EEG backbone used for every result on this page: the diffusion model, 12.0&nbsp;M parameters, pre-trained on TUEV for about 74 epochs.</p>
         <div class="ctas">
-          <a class="btn primary" href="https://github.com/AbdulkaderHelwan/NOMAD-EEG/releases">Download from GitHub Releases</a>
+          <a class="btn primary" href="https://lauedu74602-my.sharepoint.com/:f:/g/personal/abedelkader_helwan_lau_edu_lb/IgBQJQX6xN9QT73Qjxc8KeG7AbqwUOgx-9PocZmKWBN2T4Y?e=wa1ipy">Download weights (OneDrive)</a>
           <a class="btn" href="https://github.com/AbdulkaderHelwan/NOMAD-EEG">Repository</a>
         </div>
         <p style="color:var(--muted);font-size:0.92rem">The repository has the model code and scripts for linear probing, fine-tuning and testing on your own data.</p>
         <pre class="bib">pip install -e .   # after cloning the repository
 
 import nomad_eeg
-model = nomad_eeg.load_pretrained()                  # downloads the weights once
+model = nomad_eeg.load_pretrained("nomad_eeg_base.pt")  # the downloaded weights
 x = nomad_eeg.preprocess(x_uv, fs=256)               # [N, E, T] microvolts -> 200 Hz
 scaler = nomad_eeg.RobustScaler().fit(x)             # training data only
 feats = nomad_eeg.extract_features(model, scaler.transform(x), channels)</pre>

@@ -2,7 +2,7 @@
 
 **Native Omni-Montage Adaptive Diffusion.** One EEG foundation model for any electrode montage.
 
-[Paper (arXiv:2610.35246)](https://arxiv.org/abs/2610.35246) · [Project page](https://claude.ai/artifact/WGHvi64c59jZhD8VrP3vZk) · [Pre-trained weights](https://github.com/AbdulkaderHelwan/NOMAD-EEG/releases)
+[Paper (arXiv:2610.35246)](https://arxiv.org/abs/2610.35246) · [Project page](https://abdulkaderhelwan.github.io/NOMAD-EEG/) · [Pre-trained weights](https://lauedu74602-my.sharepoint.com/:f:/g/personal/abedelkader_helwan_lau_edu_lb/IgBQJQX6xN9QT73Qjxc8KeG7AbqwUOgx-9PocZmKWBN2T4Y?e=wa1ipy)
 
 NOMAD-EEG reads EEG with any number of electrodes, in any order and of any length. It identifies
 each electrode only by its 3D scalp position. It is a 12.0 M-parameter diffusion model that alternates
@@ -31,7 +31,7 @@ prediction.
 ## Results (frozen linear probe)
 
 Primary metric per dataset: AUROC for binary tasks, balanced accuracy for multi-class tasks. 95%
-bootstrap CIs and all other metrics are on the [project page](https://claude.ai/artifact/WGHvi64c59jZhD8VrP3vZk).
+bootstrap CIs and all other metrics are on the [project page](https://abdulkaderhelwan.github.io/NOMAD-EEG/#results).
 † = the model's pre-training data included this dataset or the corpus it comes from.
 
 | Model | TUAB | TUSZ | TUEV | Siena | Bonn | Mumtaz | EEGMMIDB | Sleep-EDF |
@@ -47,9 +47,9 @@ bootstrap CIs and all other metrics are on the [project page](https://claude.ai/
 
 ## Pre-trained weights
 
-[`nomad_eeg_base.pt`](https://github.com/AbdulkaderHelwan/NOMAD-EEG/releases) holds the EMA weights
+[`nomad_eeg_base.pt`](https://lauedu74602-my.sharepoint.com/:f:/g/personal/abedelkader_helwan_lau_edu_lb/IgBQJQX6xN9QT73Qjxc8KeG7AbqwUOgx-9PocZmKWBN2T4Y?e=wa1ipy) holds the EMA weights
 and configuration of the backbone used for every result above (diffusion, 12.0 M parameters, about
-74 epochs of pre-training on TUEV). `nomad_eeg.load_pretrained()` downloads it on first use.
+74 epochs of pre-training on TUEV). Download it from the [OneDrive folder](https://lauedu74602-my.sharepoint.com/:f:/g/personal/abedelkader_helwan_lau_edu_lb/IgBQJQX6xN9QT73Qjxc8KeG7AbqwUOgx-9PocZmKWBN2T4Y?e=wa1ipy) and pass its path to `nomad_eeg.load_pretrained()`.
 
 ## Installation
 
@@ -66,7 +66,7 @@ python tests/test_model.py  # CPU checks: any montage, electrode-order invarianc
 import numpy as np
 import nomad_eeg
 
-model = nomad_eeg.load_pretrained(device="cuda")          # or load_pretrained("nomad_eeg_base.pt")
+model = nomad_eeg.load_pretrained("nomad_eeg_base.pt", device="cuda")   # the downloaded weights
 
 channels = ["FP1", "FP2", "F3", "F4", "C3", "C4", "P3", "P4", "O1", "O2",
             "F7", "F8", "T3", "T4", "T5", "T6", "FZ", "CZ", "PZ"]
