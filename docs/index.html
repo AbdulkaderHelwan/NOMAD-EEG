@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NOMAD-EEG</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="NOMAD-EEG: a 12.0 M-parameter diffusion EEG foundation model that reads any montage. Results and pre-trained weights.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (max 1120px) of full-width bands; hero = live multi-montage trace, then
+   ticker, model, architecture strip, highlight cards, tabbed result tables, robustness, citation. */
+:root {
+  --bg: #f4f6f7;          /* paper, faint blue-grey */
+  --surface: #ffffff;
+  --ink: #0f1b26;         /* text */
+  --muted: #566573;
+  --line: #d9dfe4;
+  --accent: #1f4fd1;      /* NOMAD blue, the colour of NOMAD in the paper's radar figure */
+  --accent-soft: #e5ecfb;
+  --warm: #c2571a;        /* marks data overlap (pre-trained on the test corpus) */
+  --trace: #1f4fd1;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --step--1: 0.84rem; --step-0: 1rem; --step-1: 1.25rem; --step-2: 1.6rem; --step-3: 2.2rem; --step-4: clamp(2.6rem, 6vw, 4.4rem);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c141b; --surface: #121d27; --ink: #e6edf3; --muted: #9aabb9; --line: #233342;
+    --accent: #7fa2ff; --accent-soft: #1a2a4a; --warm: #f0915a; --trace: #7fa2ff; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c141b; --surface: #121d27; --ink: #e6edf3; --muted: #9aabb9; --line: #233342;
+  --accent: #7fa2ff; --accent-soft: #1a2a4a; --warm: #f0915a; --trace: #7fa2ff; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 var(--step-0)/1.6 var(--body); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+section { padding-block: 72px 24px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.08; }
+h2 { font-size: var(--step-3); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: var(--step-1); font-weight: 700; }
+p { margin: 0; max-width: 66ch; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.eyebrow { font: 500 var(--step--1)/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.stack { display: grid; gap: 16px; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* top bar */
+.bar { border-bottom: 1px solid var(--line); background: var(--bg); }
+.bar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px; flex-wrap: wrap; }
+.brand { font: 800 1.1rem/1 var(--display); letter-spacing: 0.02em; color: var(--ink); text-decoration: none; }
+.brand span { color: var(--accent); }
+.bar nav { display: flex; gap: 20px; flex-wrap: wrap; font-size: var(--step--1); }
+.bar nav a { color: var(--muted); text-decoration: none; }
+.bar nav a:hover { color: var(--ink); }
+
+/* hero */
+.hero { padding-block: 56px 40px; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 40px; align-items: center; }
+.hero h1 { font-size: var(--step-4); font-weight: 800; letter-spacing: -0.025em; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero .lede { font-size: var(--step-1); color: var(--muted); line-height: 1.5; }
+.expand { font: 500 var(--step--1)/1.4 var(--mono); color: var(--muted); }
+.ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 6px; font-weight: 600; font-size: 0.95rem; text-decoration: none; border: 1px solid var(--line); color: var(--ink); background: var(--surface); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.btn:hover { border-color: var(--accent); }
+.scope { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 14px 10px; min-width: 0; }
+.scope canvas { display: block; width: 100%; height: 300px; }
+.scope-foot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font: 400 var(--step--1)/1.4 var(--mono); color: var(--muted); padding-top: 8px; }
+.scope-foot b { color: var(--accent); font-weight: 500; }
+
+/* ticker */
+.ticker { border-block: 1px solid var(--line); background: var(--surface); }
+.ticker ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.ticker li { padding: 20px 16px; border-left: 1px solid var(--line); display: grid; gap: 4px; }
+.ticker li:first-child { border-left: 0; padding-left: 0; }
+.ticker strong { font: 700 var(--step-2)/1 var(--display); font-variant-numeric: tabular-nums; }
+.ticker span { font-size: var(--step--1); color: var(--muted); }
+
+/* model */
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; }
+.two p + p { margin-top: 14px; }
+
+/* architecture strip */
+.pipe { list-style: none; margin: 32px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; counter-reset: s; }
+.pipe li { position: relative; padding: 18px 18px 18px 0; border-top: 2px solid var(--accent); display: grid; gap: 8px; align-content: start; }
+.pipe li::before { counter-increment: s; content: counter(s, decimal-leading-zero); font: 500 var(--step--1)/1 var(--mono); color: var(--accent); }
+.pipe li.loop { background: var(--accent-soft); padding-left: 14px; }
+.pipe h3 { font-size: 1.05rem; }
+.pipe p { font-size: 0.92rem; color: var(--muted); }
+.pipe code { font-family: var(--mono); font-size: 0.85em; }
+
+/* highlight cards */
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 10px; align-content: start; }
+.card .task { font: 500 var(--step--1)/1.3 var(--mono); color: var(--muted); }
+.card .val { font: 800 2.4rem/1 var(--display); font-variant-numeric: tabular-nums; color: var(--accent); }
+.card .val small { font: 500 0.9rem/1 var(--body); color: var(--muted); margin-left: 6px; }
+.card p { font-size: 0.92rem; color: var(--muted); }
+
+/* tables */
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 28px; }
+.tabs button { font: 500 0.88rem/1 var(--body); padding: 9px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.panel { margin-top: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+.panel h3 { margin-bottom: 6px; }
+.panel .cap { font-size: 0.9rem; color: var(--muted); max-width: 90ch; }
+.tablewrap { overflow-x: auto; margin-top: 14px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font: 500 var(--step--1)/1.2 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+tr.ours td { background: var(--accent-soft); }
+tr.ours td:first-child { font-weight: 600; }
+tr.sub td:first-child { padding-left: 28px; color: var(--muted); }
+td .ci { color: var(--muted); font-size: 0.8em; margin-left: 4px; }
+td.best { font-weight: 700; }
+td.top { text-decoration: underline; text-underline-offset: 3px; }
+.mark { color: var(--warm); font-weight: 600; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); margin-top: 12px; }
+
+/* figures */
+figure { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+figure img { width: 100%; height: auto; border-radius: 4px; background: #ffffff; }
+figcaption { font-size: 0.88rem; color: var(--muted); }
+.figs { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 16px; margin-top: 28px; align-items: start; }
+
+/* citation */
+pre.bib { margin: 0; overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; font: 400 0.85rem/1.55 var(--mono); }
+.copy { justify-self: start; }
+footer { border-top: 1px solid var(--line); margin-top: 72px; }
+footer .wrap { padding-block: 28px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: var(--step--1); color: var(--muted); }
+
+@media (max-width: 900px) {
+  .hero-grid, .two, .figs { grid-template-columns: minmax(0, 1fr); }
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pipe { grid-template-columns: minmax(0, 1fr); }
+  .pipe li { padding-left: 14px; }
+  .ticker ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ticker li { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); }
+}
+@media (max-width: 560px) {
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  .scope canvas { height: 240px; }
+  section { padding-block: 52px 16px; }
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="#top">NOMAD<span>-EEG</span></a>
+    <nav aria-label="Sections">
+      <a href="#model">Model</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#results">Results</a>
+      <a href="#robustness">Missing electrodes</a>
+      <a href="#weights">Weights</a>
+      <a href="#cite">Cite</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <div class="hero-grid">
+      <div class="stack" style="gap:22px">
+        <p class="eyebrow">EEG foundation model</p>
+        <h1>One small model for <em>any electrode montage</em>.</h1>
+        <p class="expand">Native Omni-Montage Adaptive Diffusion</p>
+        <p class="lede">NOMAD-EEG reads EEG with any number of electrodes, in any order and of any length. It identifies each electrode only by its 3D position on the scalp. It has 12.0&nbsp;M parameters and was pre-trained on 147&nbsp;hours of unlabelled EEG from one corpus. On ten downstream datasets it was compared with seven EEG foundation models, all run under the same protocol.</p>
+        <div class="ctas">
+          <a class="btn primary" href="https://arxiv.org/abs/2610.35246">Paper (arXiv)</a>
+          <a class="btn" href="#weights">Pre-trained weights</a>
+          <a class="btn" href="#results">Results</a>
+        </div>
+      </div>
+      <div class="scope" aria-label="Animated EEG traces cycling through the montages used in the evaluation">
+        <canvas id="scope"></canvas>
+        <div class="scope-foot"><span id="scope-label"><b>19 electrodes</b> · Mumtaz</span><span>same weights, every montage</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ticker">
+    <div class="wrap">
+      <ul>
+        <li><strong>12.0 M</strong><span>parameters (REVE: 69 M)</span></li>
+        <li><strong>147 h</strong><span>of pre-training EEG, one corpus</span></li>
+        <li><strong>1–64</strong><span>electrodes read without retraining</span></li>
+        <li><strong>10</strong><span>downstream datasets</span></li>
+        <li><strong>7</strong><span>foundation models compared</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <section id="model">
+    <div class="wrap two">
+      <div class="stack">
+        <p class="eyebrow">The model</p>
+        <h2>Electrodes are positions, not slots.</h2>
+      </div>
+      <div>
+        <p>Most EEG foundation models are tied to the channel set and input length they were trained on. A recording with a different cap, fewer electrodes or a different duration has to be remapped, padded or cut to fit.</p>
+        <p>NOMAD-EEG never sees a channel index. Each electrode enters with its signal and its 3D coordinate from the standard 10–20 and 10–05 systems, and a bipolar derivation is placed at the midpoint of its two electrodes. The network mixes information along time with state-space layers, without patches, and across electrodes with attention, so the output does not depend on the order in which electrodes are listed.</p>
+        <p>The backbone is a diffusion model. After pre-training, its intermediate activations serve as features for a frozen linear probe or as the starting point for fine-tuning.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="architecture">
+    <div class="wrap">
+      <div class="stack">
+        <p class="eyebrow">Architecture</p>
+        <h2>From raw signal to a 10,240-dimensional embedding</h2>
+      </div>
+      <ol class="pipe">
+        <li><h3>Input</h3><p>An <code>E × T</code> signal with one 3D position per electrode. Resampled to 200&nbsp;Hz and robust-scaled per corpus.</p></li>
+        <li><h3>Per-electrode stem</h3><p>The same stem embeds every electrode's signal independently, with no channel-specific weights.</p></li>
+        <li class="loop"><h3>Time mixing</h3><p>S4D state-space layers along time, without patches, so any segment length is accepted.</p></li>
+        <li class="loop"><h3>Electrode attention</h3><p>Attention across electrodes, with Fourier features of the 3D coordinates. Steps 3 and 4 alternate over 16 blocks (d&nbsp;=&nbsp;256).</p></li>
+        <li><h3>Embedding</h3><p>Mean and standard deviation of four gate blocks over five windows give a 10,240-d feature vector.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="highlights">
+    <div class="wrap">
+      <div class="stack">
+        <p class="eyebrow">Highlights</p>
+        <h2>Where NOMAD-EEG leads</h2>
+        <p style="color:var(--muted)">Frozen linear probes unless stated. Every number is from the paper's tables; the full tables, including the tasks where other models are better, are below.</p>
+      </div>
+      <div class="cards">
+        <article class="card"><span class="task">EEGMMIDB · motor imagery, 4 classes, 64 electrodes</span><span class="val num">0.442<small>bal. acc.</small></span><p>Best of eight models. Next: DiffEEG 0.418, REVE 0.371.</p></article>
+        <article class="card"><span class="task">Siena · seizure detection</span><span class="val num">0.622<small>macro F1</small></span><p>Best of eight models. Next: REVE 0.562, EEGDM 0.534.</p></article>
+        <article class="card"><span class="task">Bonn · seizure detection, single channel</span><span class="val num">0.999<small>AUROC</small></span><p>Best of eight models. REVE 0.998, CBraMod 0.996.</p></article>
+        <article class="card"><span class="task">TUEP · epilepsy diagnosis, 200 patients</span><span class="val num">0.640<small>accuracy</small></span><p>Highest accuracy and macro F1 of the seven models compared, at the patient level.</p></article>
+        <article class="card"><span class="task">TUEV · six EEG event classes</span><span class="val num">0.635<small>Cohen κ</small></span><p>After fine-tuning, the highest κ and weighted F1 (0.814). The baselines were evaluated as frozen probes.</p></article>
+        <article class="card"><span class="task">BCIAUT-P300 · autism, unseen 8-electrode cap</span><span class="val num">0.718<small>AUROC</small></span><p>Best of five models. Picks the attended object in 75.5% of blocks after ten runs (EEGDM 61.2%).</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="results">
+    <div class="wrap">
+      <div class="stack">
+        <p class="eyebrow">Results</p>
+        <h2>Full benchmark</h2>
+        <p style="color:var(--muted)">All baselines were run by us from their released weights, each with its native input format. Frozen encoders with a class-balanced logistic-regression probe; brackets give 95% bootstrap confidence intervals. Bold is the best value in each column.</p>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Datasets" id="tabs"></div>
+      <div class="panel" role="tabpanel" id="panel" aria-live="polite"></div>
+      <div class="legend"><span><span class="mark">†</span> the model's pre-training data included this dataset or the corpus it comes from</span><span>Indented rows: NOMAD-EEG variants, outside the bold comparison unless stated</span></div>
+    </div>
+  </section>
+
+  <section id="robustness">
+    <div class="wrap">
+      <div class="stack">
+        <p class="eyebrow">Epilepsy summary and missing electrodes</p>
+        <h2>Robust when electrodes go missing</h2>
+        <p style="color:var(--muted)">On Mumtaz, a probe trained once on all 19 electrodes was applied unchanged to random subsets. Mean AUROC went from 0.942 with all electrodes to 0.919 with 14, 0.919 with 10 and 0.891 with 5, and no subset fell below 0.877. Listing the electrodes in a different order changed no prediction.</p>
+      </div>
+      <div class="figs">
+        <figure>
+          <img src="assets/fig_radar_epilepsy_macrof1.png" alt="Radar chart of macro F1 for eight models on five epilepsy tasks: TUSZ, Siena, Bonn, TUEV and TUEP." loading="lazy">
+          <figcaption>Macro F1 on five epilepsy tasks for all eight models (frozen probes). Red dots mark a model that was pre-trained on that dataset.</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/fig6_channel_subset.png" alt="Scalp maps of electrode subsets on Mumtaz with their AUROC, and AUROC and balanced accuracy against the number of electrodes." loading="lazy">
+          <figcaption>Missing-electrode test on Mumtaz (1,179 test windows). Filled dots are the electrodes given to the model. AUROC stays high; balanced accuracy drops because scores shift relative to the threshold fitted on the full montage.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="weights">
+    <div class="wrap two">
+      <div class="stack">
+        <p class="eyebrow">Weights</p>
+        <h2>Pre-trained backbone and code</h2>
+      </div>
+      <div class="stack">
+        <p>The release contains the EMA weights of the NOMAD-EEG backbone used for every result on this page: the diffusion model, 12.0&nbsp;M parameters, pre-trained on TUEV for about 74 epochs.</p>
+        <div class="ctas">
+          <a class="btn primary" href="https://github.com/AbdulkaderHelwan/NOMAD-EEG/releases">Download from GitHub Releases</a>
+          <a class="btn" href="https://github.com/AbdulkaderHelwan/NOMAD-EEG">Repository</a>
+        </div>
+        <p style="color:var(--muted);font-size:0.92rem">The repository has the model code and scripts for linear probing, fine-tuning and testing on your own data.</p>
+        <pre class="bib">pip install -e .   # after cloning the repository
+
+import nomad_eeg
+model = nomad_eeg.load_pretrained()                  # downloads the weights once
+x = nomad_eeg.preprocess(x_uv, fs=256)               # [N, E, T] microvolts -> 200 Hz
+scaler = nomad_eeg.RobustScaler().fit(x)             # training data only
+feats = nomad_eeg.extract_features(model, scaler.transform(x), channels)</pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="cite">
+    <div class="wrap stack">
+      <p class="eyebrow">Citation</p>
+      <h2>Cite NOMAD-EEG</h2>
+      <pre class="bib" id="bib">@article{helwan2026nomadeeg,
+  title   = {{NOMAD-EEG}: Native Omni-Montage Adaptive Diffusion},
+  author  = {Helwan, Abdulkader and Henni, Khadidja and Abou-Abbas, Lina},
+  journal = {arXiv preprint arXiv:2610.35246},
+  year    = {2026}
+}</pre>
+      <button class="btn copy" id="copy" type="button">Copy BibTeX</button>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Abdulkader Helwan, Khadidja Henni, Lina Abou-Abbas · Lebanese American University · TÉLUQ University</span>
+    <span>NOMAD-EEG, 2026</span>
+  </div>
+</footer>
+
+<script>
+// ---- result tables (values copied from the paper's tables). "!" = bold, "_" = underlined, "~" = indented row
+const B = ["EEGDM", "REVE", "CBraMod", "LaBraM", "BIOT", "EEGMamba", "DiffEEG"];
+const DATA = [
+  { id: "tuab", tab: "TUAB", title: "TUAB · abnormal EEG", cap: "5 s windows, 50,000 test windows.",
+    cols: ["Dim", "AUROC", "PR-AUC", "Bal. acc.", "Macro F1"],
+    rows: [["NOMAD-EEG", "10,240", "0.838 [0.834, 0.842]", "0.820", "0.770", "0.771"],
+      ["~fine-tuned", "—", "0.833 [0.830, 0.837]", "0.785", "0.770", "0.771"],
+      ["EEGDM", "2,560", "0.869 [0.865, 0.872]", "0.862", "0.792", "0.792"],
+      ["REVE", "512", "!0.870 [0.867, 0.873]", "!0.880", "!0.800", "!0.802"],
+      ["CBraMod†", "200", "0.808 [0.804, 0.812]", "0.803", "0.738", "0.739"],
+      ["LaBraM", "200", "0.788 [0.784, 0.792]", "0.785", "0.713", "0.714"],
+      ["BIOT†", "256", "0.847 [0.844, 0.850]", "0.849", "0.771", "0.772"],
+      ["EEGMamba†", "200", "0.746 [0.742, 0.750]", "0.726", "0.689", "0.690"],
+      ["DiffEEG", "2,400", "0.760 [0.756, 0.764]", "0.718", "0.695", "0.696"]] },
+  { id: "tusz", tab: "TUSZ", title: "TUSZ · seizure detection", cap: "5 s windows, 50,000 test windows at the true seizure prevalence.",
+    cols: ["Dim", "AUROC", "PR-AUC", "Bal. acc.", "Macro F1"],
+    rows: [["NOMAD-EEG", "10,240", "0.866 [0.860, 0.873]", "0.446", "0.787", "0.620"],
+      ["~fine-tuned", "—", "0.854 [0.847, 0.860]", "0.345", "0.773", "0.676"],
+      ["EEGDM", "2,560", "0.874 [0.866, 0.881]", "!0.527", "!0.801", "!0.642"],
+      ["REVE†", "512", "!0.879 [0.873, 0.886]", "0.463", "0.798", "0.611"],
+      ["CBraMod†", "200", "0.855 [0.847, 0.862]", "0.455", "0.776", "0.586"],
+      ["LaBraM†", "200", "0.845 [0.837, 0.851]", "0.416", "0.765", "0.589"],
+      ["BIOT", "256", "0.760 [0.752, 0.768]", "0.279", "0.691", "0.544"],
+      ["EEGMamba†", "200", "0.836 [0.829, 0.843]", "0.308", "0.763", "0.585"],
+      ["DiffEEG†", "2,400", "0.813 [0.804, 0.820]", "0.301", "0.745", "0.575"]] },
+  { id: "tuev", tab: "TUEV", title: "TUEV · six event classes", cap: "29,421 test events; probe chosen by 5-fold subject-grouped cross-validation. TUEV was in NOMAD-EEG's pre-training data (unlabelled). Bold includes the fine-tuned row, although the baselines were evaluated as frozen probes only.",
+    cols: ["Dim", "Bal. acc.", "Cohen κ", "Weighted F1"],
+    rows: [["NOMAD-EEG", "10,240", "0.542 [0.529, 0.554]", "0.465", "0.719"],
+      ["~fine-tuned", "—", "0.597 [0.588, 0.605]", "!0.635", "!0.814"],
+      ["EEGDM†", "2,560", "!0.647 [0.638, 0.657]", "0.568", "0.783"],
+      ["REVE", "512", "0.565 [0.553, 0.577]", "0.515", "0.753"],
+      ["CBraMod†", "200", "0.466 [0.455, 0.477]", "0.346", "0.635"],
+      ["LaBraM", "200", "0.521 [0.510, 0.534]", "0.365", "0.633"],
+      ["BIOT†", "256", "0.519 [0.507, 0.530]", "0.428", "0.698"],
+      ["EEGMamba†", "200", "0.520 [0.509, 0.530]", "0.374", "0.664"],
+      ["DiffEEG", "2,400", "0.329 [0.318, 0.340]", "0.179", "0.503"]] },
+  { id: "tuep", tab: "TUEP", title: "TUEP · epilepsy diagnosis", cap: "200 patients (100 with, 100 without epilepsy), 19 electrodes, 60 windows of 5 s per patient; 5-fold cross-validation over patients with identical folds. A patient's score is the mean probability of their windows. LaBraM is not included because TUEP was part of its pre-training data (under the same protocol its AUROC is 0.741 and accuracy 0.680). Bold: best among models whose pre-training did not include TUEP recordings; underlined: best overall.",
+    cols: ["Dim", "AUROC", "PR-AUC", "Accuracy", "Weighted F1", "Macro F1"],
+    rows: [["NOMAD-EEG", "10,240", "!0.679 [0.607, 0.751]", "!0.675", "!_0.640", "!_0.638", "!_0.638"],
+      ["EEGDM", "2,560", "0.673 [0.599, 0.745]", "0.638", "0.610", "0.609", "0.609"],
+      ["REVE†", "512", "0.671 [0.596, 0.748]", "0.674", "0.605", "0.605", "0.605"],
+      ["CBraMod†", "200", "0.671 [0.591, 0.745]", "0.667", "0.615", "0.615", "0.615"],
+      ["BIOT", "256", "0.675 [0.605, 0.748]", "0.633", "0.630", "0.630", "0.630"],
+      ["EEGMamba†", "200", "_0.694 [0.619, 0.766]", "_0.701", "0.625", "0.625", "0.625"],
+      ["DiffEEG", "2,400", "0.622 [0.542, 0.702]", "0.603", "0.605", "0.605", "0.605"]] },
+  { id: "siena", tab: "Siena", title: "Siena · seizure detection", cap: "External to NOMAD-EEG; 18,729 test windows, 0.6% seizure in training.",
+    cols: ["Dim", "AUROC", "PR-AUC", "Accuracy", "Weighted F1", "Macro F1"],
+    rows: [["NOMAD-EEG", "10,240", "0.882 [0.847, 0.914]", "0.306", "!0.979", "!0.984", "!0.622"],
+      ["EEGDM", "2,560", "!0.915 [0.889, 0.938]", "0.248", "0.916", "0.950", "0.534"],
+      ["REVE†", "512", "0.906 [0.872, 0.937]", "!0.460", "0.946", "0.966", "0.562"],
+      ["CBraMod", "200", "0.850 [0.806, 0.888]", "0.189", "0.872", "0.925", "0.502"],
+      ["LaBraM†", "200", "0.797 [0.756, 0.836]", "0.056", "0.833", "0.903", "0.478"],
+      ["BIOT", "256", "0.707 [0.657, 0.755]", "0.020", "0.780", "0.870", "0.455"],
+      ["EEGMamba†", "200", "0.855 [0.812, 0.893]", "0.252", "0.828", "0.899", "0.482"],
+      ["DiffEEG", "2,400", "0.777 [0.724, 0.827]", "0.057", "0.921", "0.952", "0.522"]] },
+  { id: "bonn", tab: "Bonn", title: "Bonn · seizure detection", cap: "External; single-channel recordings, 100 test segments. All models read the recording in a 22-channel frame; the indented row gives NOMAD-EEG the one signal-carrying electrode alone.",
+    cols: ["Dim", "AUROC", "PR-AUC", "Bal. acc.", "Macro F1"],
+    rows: [["NOMAD-EEG", "10,240", "!0.999 [0.996, 1.000]", "!0.998", "!0.994", "!0.985"],
+      ["~single electrode only", "10,240", "0.995 [0.981, 1.000]", "0.983", "0.944", "0.913"],
+      ["EEGDM", "2,560", "0.994 [0.982, 1.000]", "0.975", "0.963", "0.915"],
+      ["REVE", "512", "0.998 [0.991, 1.000]", "0.992", "!0.994", "!0.985"],
+      ["CBraMod", "200", "0.996 [0.986, 1.000]", "0.985", "0.956", "0.903"],
+      ["LaBraM", "200", "0.995 [0.983, 1.000]", "0.982", "0.950", "0.890"],
+      ["BIOT", "256", "0.979 [0.943, 1.000]", "0.949", "0.938", "0.900"],
+      ["EEGMamba", "200", "0.948 [0.867, 1.000]", "0.919", "0.906", "0.906"],
+      ["DiffEEG", "2,400", "0.982 [0.954, 0.999]", "0.937", "0.944", "0.913"]] },
+  { id: "eegmmidb", tab: "EEGMMIDB", title: "EEGMMIDB · motor imagery", cap: "External to NOMAD-EEG; 4 classes, 64 electrodes, 4 s trials; 1,803 test trials from 20 held-out subjects.",
+    cols: ["Dim", "Bal. acc.", "Cohen κ", "Weighted F1"],
+    rows: [["NOMAD-EEG", "10,240", "!0.442 [0.419, 0.463]", "!0.256", "!0.442"],
+      ["~fine-tuned", "—", "0.596 [0.574, 0.618]", "0.461", "0.599"],
+      ["EEGDM", "2,560", "0.347 [0.325, 0.367]", "0.130", "0.338"],
+      ["REVE", "512", "0.371 [0.348, 0.393]", "0.161", "0.370"],
+      ["CBraMod", "200", "0.308 [0.287, 0.330]", "0.078", "0.306"],
+      ["LaBraM†", "200", "0.302 [0.280, 0.324]", "0.070", "0.301"],
+      ["BIOT", "256", "0.274 [0.255, 0.294]", "0.032", "0.269"],
+      ["EEGMamba", "200", "0.304 [0.283, 0.324]", "0.073", "0.303"],
+      ["DiffEEG", "2,400", "0.418 [0.395, 0.439]", "0.224", "0.417"]] },
+  { id: "mumtaz", tab: "Mumtaz", title: "Mumtaz · depression vs healthy", cap: "External; 19 electrodes, 5 s windows; 1,179 test windows from 10 held-out subjects.",
+    cols: ["Dim", "AUROC", "PR-AUC", "Bal. acc.", "Macro F1"],
+    rows: [["NOMAD-EEG", "10,240", "0.942 [0.929, 0.954]", "0.951", "0.832", "0.831"],
+      ["~fine-tuned", "—", "0.872 [0.851, 0.893]", "0.792", "0.821", "0.821"],
+      ["EEGDM", "2,560", "0.946 [0.935, 0.958]", "0.945", "!0.857", "!0.856"],
+      ["REVE", "512", "!0.960 [0.951, 0.968]", "!0.962", "0.842", "0.841"],
+      ["CBraMod", "200", "0.860 [0.838, 0.883]", "0.810", "0.804", "0.803"],
+      ["LaBraM", "200", "0.904 [0.887, 0.922]", "0.886", "0.838", "0.837"],
+      ["BIOT", "256", "0.928 [0.912, 0.942]", "0.910", "0.829", "0.829"],
+      ["EEGMamba", "200", "0.867 [0.845, 0.887]", "0.843", "0.810", "0.809"],
+      ["DiffEEG", "2,400", "0.901 [0.883, 0.918]", "0.889", "0.807", "0.806"]] },
+  { id: "sleepedf", tab: "Sleep-EDF", title: "Sleep-EDF-20 · sleep staging", cap: "External; 5 stages, 2 bipolar channels, 30 s epochs; 9,137 test epochs from 4 held-out subjects.",
+    cols: ["Dim", "Bal. acc.", "Cohen κ", "Weighted F1"],
+    rows: [["NOMAD-EEG", "10,240", "0.757 [0.748, 0.766]", "0.680", "0.770"],
+      ["~fine-tuned", "—", "0.758 [0.748, 0.768]", "0.694", "0.784"],
+      ["EEGDM", "2,560", "!0.779 [0.770, 0.788]", "!0.718", "!0.802"],
+      ["REVE", "512", "0.760 [0.750, 0.770]", "0.675", "0.771"],
+      ["CBraMod", "200", "0.725 [0.715, 0.735]", "0.639", "0.743"],
+      ["LaBraM", "200", "0.738 [0.729, 0.747]", "0.676", "0.770"],
+      ["BIOT", "256", "0.741 [0.731, 0.750]", "0.659", "0.761"],
+      ["EEGMamba", "200", "0.722 [0.712, 0.732]", "0.601", "0.717"],
+      ["DiffEEG", "2,400", "0.715 [0.704, 0.725]", "0.628", "0.737"]] },
+  { id: "p300", tab: "P300 (autism)", title: "BCIAUT-P300 · P300 detection in autism", cap: "15 participants with ASD, 168,000 epochs, 12.5% targets. Encoders never trained on this corpus; probe evaluated on unseen subjects (five folds of three subjects). Object accuracy: the attended object among eight, from the first 1, 3 or 10 runs of a block (chance 12.5%).",
+    cols: ["Channels read", "AUROC", "Bal. acc.", "PR-AUC", "Object acc. (1/3/10 runs)"],
+    rows: [["NOMAD-EEG", "8", "!0.718 [0.695, 0.739]", "!0.660", "!0.289", "!32.6 / 51.5 / 75.5%"],
+      ["EEGDM", "4 bipolar", "0.667 [0.631, 0.699]", "0.624", "0.227", "27.8 / 42.4 / 61.2%"],
+      ["REVE", "8", "0.651 [0.626, 0.675]", "0.612", "0.209", "24.6 / 37.9 / 57.5%"],
+      ["BIOT", "2 bipolar", "0.530 [0.521, 0.539]", "0.520", "0.136", "14.5 / 17.2 / 21.8%"],
+      ["DiffEEG", "6", "0.522 [0.508, 0.534]", "0.517", "0.133", "13.9 / 15.1 / 19.4%"]] },
+  { id: "parkinson", tab: "Parkinson's", title: "Parkinson's disease vs control", cap: "OpenNeuro ds004584; 149 participants (100 PD, 49 controls), 60 electrodes, 5 s windows; 5-fold cross-validation over participants.",
+    cols: ["Window AUROC", "Participant AUROC", "Participant bal. acc."],
+    rows: [["NOMAD-EEG", "0.679 [0.609, 0.754]", "0.684 [0.590, 0.777]", "0.620 [0.542, 0.706]"],
+      ["EEGDM", "!0.783 [0.709, 0.845]", "!0.795 [0.714, 0.868]", "!0.702 [0.618, 0.782]"],
+      ["REVE", "0.653 [0.571, 0.733]", "0.643 [0.547, 0.740]", "0.626 [0.543, 0.705]"],
+      ["BIOT", "0.659 [0.583, 0.730]", "0.681 [0.593, 0.771]", "0.672 [0.593, 0.748]"],
+      ["DiffEEG", "0.634 [0.585, 0.683]", "0.713 [0.623, 0.794]", "0.672 [0.587, 0.751]"]] },
+  { id: "seedv", tab: "SEED-V", title: "SEED-V · emotion recognition (NOMAD-EEG only)", cap: "External; 5 emotions, 59 electrodes, 1 s windows; film clips 1–5 train, 6–10 validation, 11–15 test in every session. Chance balanced accuracy is 0.20.",
+    cols: ["Bal. acc.", "Cohen κ", "Weighted F1"],
+    rows: [["NOMAD-EEG (frozen probe)", "0.315 [0.310, 0.319]", "0.136", "0.302"],
+      ["~fine-tuned", "0.384 [0.380, 0.389]", "0.231", "0.392"]] }
+];
+
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+function cell(v) {
+  let cls = [];
+  if (v.startsWith("!")) { cls.push("best"); v = v.slice(1); }
+  if (v.startsWith("_")) { cls.push("top"); v = v.slice(1); }
+  const m = v.match(/^(.*?) (\[.*\])$/);
+  const body = m ? `${esc(m[1])}<span class="ci">${esc(m[2])}</span>` : esc(v);
+  return `<td class="${cls.join(" ")}">${body}</td>`;
+}
+function name(n) {
+  return esc(n.replace("†", "")) + (n.includes("†") ? ' <span class="mark" title="pre-trained on this dataset or its corpus">†</span>' : "");
+}
+function render(id) {
+  const d = DATA.find(x => x.id === id) || DATA[0];
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.id === d.id));
+  const head = `<tr><th>Model</th>${d.cols.map(c => `<th>${esc(c)}</th>`).join("")}</tr>`;
+  const body = d.rows.map(r => {
+    const sub = r[0].startsWith("~"), ours = r[0].startsWith("NOMAD") || sub;
+    const label = sub ? esc(r[0].slice(1)) : name(r[0]);
+    return `<tr class="${ours ? "ours" : ""} ${sub ? "sub" : ""}"><td>${label}</td>${r.slice(1).map(cell).join("")}</tr>`;
+  }).join("");
+  document.getElementById("panel").innerHTML =
+    `<h3>${esc(d.title)}</h3><p class="cap">${esc(d.cap)}</p><div class="tablewrap"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  try { localStorage.setItem("nomad-tab", d.id); } catch (e) {}
+}
+const tabs = document.getElementById("tabs");
+DATA.forEach(d => {
+  const b = document.createElement("button");
+  b.type = "button"; b.role = "tab"; b.dataset.id = d.id; b.id = "tab-" + d.id; b.textContent = d.tab;
+  b.addEventListener("click", () => render(d.id));
+  tabs.appendChild(b);
+});
+let first = "tuev";
+try { first = localStorage.getItem("nomad-tab") || first; } catch (e) {}
+render(first);
+
+// ---- copy BibTeX
+document.getElementById("copy").addEventListener("click", e => {
+  const t = document.getElementById("bib").textContent, btn = e.currentTarget;
+  const done = () => { btn.textContent = "Copied"; setTimeout(() => btn.textContent = "Copy BibTeX", 1600); };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents(document.getElementById("bib")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = "Selected, press Ctrl+C"; };
+  try { navigator.clipboard.writeText(t).then(done, fallback); } catch (err) { fallback(); }
+});
+
+// ---- hero scope: illustrative traces cycling through the montages used in the evaluation
+(function () {
+  const cv = document.getElementById("scope"), ctx = cv.getContext("2d"), label = document.getElementById("scope-label");
+  const MONT = [[1, "Bonn"], [2, "Sleep-EDF (bipolar)"], [8, "BCIAUT-P300"], [19, "Mumtaz"], [64, "EEGMMIDB"]];
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let k = 3, t0 = performance.now(), W = 0, H = 0;
+  const seeds = Array.from({ length: 64 }, (_, i) => [Math.sin(i * 12.9898) * 43758.5453 % 1, (i * 0.618) % 1]);
+  function size() { const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1; W = r.width; H = r.height; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  function color() { return getComputedStyle(document.documentElement).getPropertyValue("--trace").trim() || "#1f4fd1"; }
+  function draw(now) {
+    const [n, nm] = MONT[k], t = (now - t0) / 1000;
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = color(); ctx.lineWidth = n > 20 ? 0.8 : 1.4;
+    const gap = H / (n + 1), amp = Math.min(gap * 0.42, 34);
+    for (let c = 0; c < n; c++) {
+      const [a, b] = seeds[c], y0 = gap * (c + 1);
+      ctx.globalAlpha = n > 20 ? 0.7 : 0.95;
+      ctx.beginPath();
+      for (let x = 0; x <= W; x += 2) {
+        const s = x / 60 + t * 1.6;
+        const v = Math.sin(s * (2.1 + a)) * 0.5 + Math.sin(s * (5.3 + b * 3) + c) * 0.28 + Math.sin(s * (11 + a * 7) + c * 2) * 0.16 + Math.sin(s * 0.7 + b * 6) * 0.3;
+        x === 0 ? ctx.moveTo(x, y0 + v * amp) : ctx.lineTo(x, y0 + v * amp);
+      }
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    label.innerHTML = `<b>${n} electrode${n > 1 ? "s" : ""}</b> · ${nm}`;
+  }
+  size(); addEventListener("resize", () => { size(); draw(performance.now()); });
+  if (reduce) { draw(performance.now()); return; }
+  setInterval(() => { k = (k + 1) % MONT.length; }, 2600);
+  (function loop(now) { draw(now); requestAnimationFrame(loop); })(performance.now());
+})();
+</script>
+</body>
+</html>
