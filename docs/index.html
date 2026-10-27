@@ -22,6 +22,10 @@
   --accent-soft: #e5ecfb;
   --warm: #c2571a;        /* marks data overlap (pre-trained on the test corpus) */
   --trace: #1f4fd1;
+  --green: #2c7a4b;       /* gated output / readout */
+  --green-soft: #e1f0e7;
+  --violet: #6a4bb5;      /* noise and conditioning */
+  --violet-soft: #ece6f8;
   --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   --body: "IBM Plex Sans", "Helvetica Neue", Arial, system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -30,12 +34,14 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0c141b; --surface: #121d27; --ink: #e6edf3; --muted: #9aabb9; --line: #233342;
-    --accent: #7fa2ff; --accent-soft: #1a2a4a; --warm: #f0915a; --trace: #7fa2ff; color-scheme: dark;
+    --accent: #7fa2ff; --accent-soft: #1a2a4a; --warm: #f0915a; --trace: #7fa2ff;
+    --green: #6cc68f; --green-soft: #17302a; --violet: #b29cf0; --violet-soft: #272140; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0c141b; --surface: #121d27; --ink: #e6edf3; --muted: #9aabb9; --line: #233342;
-  --accent: #7fa2ff; --accent-soft: #1a2a4a; --warm: #f0915a; --trace: #7fa2ff; color-scheme: dark;
+  --accent: #7fa2ff; --accent-soft: #1a2a4a; --warm: #f0915a; --trace: #7fa2ff;
+  --green: #6cc68f; --green-soft: #17302a; --violet: #b29cf0; --violet-soft: #272140; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 400 var(--step-0)/1.6 var(--body); }
@@ -97,8 +103,39 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
 .pipe p { font-size: 0.92rem; color: var(--muted); }
 .pipe code { font-family: var(--mono); font-size: 0.85em; }
 
+/* architecture figure */
+.archwrap { margin-top: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; overflow-x: auto; }
+.arch { display: block; width: 100%; min-width: 760px; height: auto; }
+.arch text { font-family: var(--body); font-size: 13px; fill: var(--ink); }
+.arch .ttl { font: 700 15px var(--display); }
+.arch .sm { font-size: 11.5px; }
+.arch .mu { fill: var(--muted); }
+.arch .acc { fill: var(--accent); } .arch .wrm { fill: var(--warm); } .arch .grn { fill: var(--green); } .arch .vio { fill: var(--violet); }
+.arch .b { font-weight: 600; }
+.arch .ln { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+.arch .box { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+.arch .head { fill: var(--surface); stroke: var(--muted); stroke-width: 1.4; }
+.arch .w-acc { stroke: var(--accent); fill: none; stroke-width: 1.4; }
+.arch .w-vio { stroke: var(--violet); fill: none; stroke-width: 1.4; }
+.arch .arrowhead { fill: var(--muted); }
+.archcap { font-size: 0.88rem; color: var(--muted); margin-top: 12px; max-width: 100ch; }
+
+/* animated walkthrough */
+.flow { margin-top: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; }
+.flow-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.chips, .flow-ctl { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { font: 500 0.86rem/1 var(--body); padding: 9px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip small { font: 400 0.75rem/1 var(--mono); color: inherit; opacity: 0.75; margin-left: 4px; }
+#flow-canvas { display: block; width: 100%; height: 400px; }
+.flow-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.flow-steps button { width: 100%; text-align: left; font: 500 0.8rem/1.3 var(--body); padding: 8px 4px 0; border: 0; border-top: 3px solid var(--line); background: none; color: var(--muted); cursor: pointer; }
+.flow-steps button[aria-current="step"] { border-top-color: var(--accent); color: var(--ink); }
+.flow-cap { display: grid; gap: 6px; }
+.flow-cap p { color: var(--muted); min-height: 4.8em; max-width: 80ch; }
+
 /* highlight cards */
-.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
+.cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 10px; align-content: start; }
 .card .task { font: 500 var(--step--1)/1.3 var(--mono); color: var(--muted); }
 .card .val { font: 800 2.4rem/1 var(--display); font-variant-numeric: tabular-nums; color: var(--accent); }
@@ -140,6 +177,8 @@ footer .wrap { padding-block: 28px; display: flex; justify-content: space-betwee
 
 @media (max-width: 900px) {
   .hero-grid, .two, .figs { grid-template-columns: minmax(0, 1fr); }
+  #flow-canvas { height: 640px; }
+  .flow-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pipe { grid-template-columns: minmax(0, 1fr); }
   .pipe li { padding-left: 14px; }
@@ -161,6 +200,7 @@ footer .wrap { padding-block: 28px; display: flex; justify-content: space-betwee
     <nav aria-label="Sections">
       <a href="#model">Model</a>
       <a href="#architecture">Architecture</a>
+      <a href="#how">How it works</a>
       <a href="#results">Results</a>
       <a href="#robustness">Missing electrodes</a>
       <a href="#weights">Weights</a>
@@ -222,13 +262,135 @@ footer .wrap { padding-block: 28px; display: flex; justify-content: space-betwee
         <p class="eyebrow">Architecture</p>
         <h2>From raw signal to a 10,240-dimensional embedding</h2>
       </div>
-      <ol class="pipe">
-        <li><h3>Input</h3><p>An <code>E × T</code> signal with one 3D position per electrode. Resampled to 200&nbsp;Hz and robust-scaled per corpus.</p></li>
-        <li><h3>Per-electrode stem</h3><p>The same stem embeds every electrode's signal independently, with no channel-specific weights.</p></li>
-        <li class="loop"><h3>Time mixing</h3><p>S4D state-space layers along time, without patches, so any segment length is accepted.</p></li>
-        <li class="loop"><h3>Electrode attention</h3><p>Attention across electrodes, with Fourier features of the 3D coordinates. Steps 3 and 4 alternate over 16 blocks (d&nbsp;=&nbsp;256).</p></li>
-        <li><h3>Embedding</h3><p>Mean and standard deviation of four gate blocks over five windows give a 10,240-d feature vector.</p></li>
-      </ol>
+      <div class="archwrap">
+        <svg class="arch" id="arch" viewBox="0 0 1000 556" role="img" aria-labelledby="arch-title">
+          <title id="arch-title">NOMAD-EEG architecture: pre-training by denoising diffusion, the inside of one NOMAD block, and the two downstream readouts.</title>
+          <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+
+          <!-- a: pre-training -->
+          <text x="8" y="22" class="ttl"><tspan class="acc">a</tspan>  Pre-training: denoising diffusion on TUEV (147 h)</text>
+          <g data-scalp="70,108,42,m21,0"></g>
+          <text x="70" y="172" text-anchor="middle" class="sm">21 electrodes,</text>
+          <text x="70" y="187" text-anchor="middle" class="sm">3D positions pₑ</text>
+          <path class="ln" d="M120,108 H145" marker-end="url(#ah)"/>
+          <text x="210" y="52" text-anchor="middle" class="sm">clean 30 s window x₀</text>
+          <path class="w-acc" data-w="155,72,110,5,1,0"/><path class="w-acc" data-w="155,90,110,5,2,0"/><path class="w-acc" data-w="155,108,110,5,3,0"/><path class="w-acc" data-w="155,126,110,5,4,0"/><path class="w-acc" data-w="155,144,110,5,5,0"/>
+          <text x="210" y="168" text-anchor="middle" class="sm mu">E × T at 200 Hz</text>
+          <circle cx="288" cy="108" r="10" class="box" style="stroke:var(--muted)"/><path class="ln" d="M282,108 H294 M288,102 V114"/>
+          <text x="350" y="52" text-anchor="middle" class="sm vio">noise ε</text>
+          <path class="w-vio" data-w="310,72,80,4,6,1"/><path class="w-vio" data-w="310,90,80,4,7,1"/><path class="w-vio" data-w="310,108,80,4,8,1"/><path class="w-vio" data-w="310,126,80,4,9,1"/><path class="w-vio" data-w="310,144,80,4,10,1"/>
+          <path class="ln" d="M398,108 H420" marker-end="url(#ah)"/>
+          <text x="475" y="52" text-anchor="middle" class="sm">noisy xₖ</text>
+          <path class="w-acc" data-w="425,72,100,6,1,1"/><path class="w-acc" data-w="425,90,100,6,2,1"/><path class="w-acc" data-w="425,108,100,6,3,1"/><path class="w-acc" data-w="425,126,100,6,4,1"/><path class="w-acc" data-w="425,144,100,6,5,1"/>
+          <path class="ln" d="M532,108 H558" marker-end="url(#ah)"/>
+          <text x="670" y="36" text-anchor="middle" class="sm vio">pₑ, noise level t, corpus c</text>
+          <path class="ln" d="M670,42 V58" marker-end="url(#ah)" style="stroke:var(--violet)"/>
+          <rect x="565" y="60" width="210" height="96" rx="12" style="fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.4"/>
+          <rect x="578" y="72" width="32" height="72" rx="5" class="box" style="stroke:var(--accent)"/>
+          <text transform="translate(598,108) rotate(-90)" text-anchor="middle" class="sm acc">stem</text>
+          <rect x="637" y="80" width="70" height="64" rx="6" class="box" style="stroke:var(--accent);opacity:.55"/>
+          <rect x="631" y="76" width="70" height="64" rx="6" class="box" style="stroke:var(--accent);opacity:.8"/>
+          <rect x="625" y="72" width="70" height="64" rx="6" class="box" style="stroke:var(--accent)"/>
+          <text x="660" y="98" text-anchor="middle" class="sm acc b">NOMAD</text>
+          <text x="660" y="113" text-anchor="middle" class="sm acc b">block</text>
+          <text x="660" y="128" text-anchor="middle" class="sm acc b">× 16</text>
+          <rect x="730" y="72" width="32" height="72" rx="5" class="box" style="stroke:var(--accent)"/>
+          <text transform="translate(750,108) rotate(-90)" text-anchor="middle" class="sm acc">head</text>
+          <text x="670" y="174" text-anchor="middle" class="sm mu">NOMAD-EEG · 12.0 M parameters</text>
+          <path class="ln" d="M780,108 H805" marker-end="url(#ah)"/>
+          <text x="846" y="52" text-anchor="middle" class="sm vio">predicted ε̂</text>
+          <path class="w-vio" data-w="810,72,72,4,6,1"/><path class="w-vio" data-w="810,90,72,4,7,1"/><path class="w-vio" data-w="810,108,72,4,8,1"/><path class="w-vio" data-w="810,126,72,4,9,1"/><path class="w-vio" data-w="810,144,72,4,10,1"/>
+          <path class="ln" d="M888,108 H906" marker-end="url(#ah)"/>
+          <rect x="910" y="80" width="84" height="56" rx="8" style="fill:var(--violet-soft);stroke:var(--violet)"/>
+          <text x="952" y="103" text-anchor="middle" class="sm vio b">loss</text>
+          <text x="952" y="123" text-anchor="middle" class="sm vio">‖ε̂ − ε‖²</text>
+          <path d="M350,156 V198 H952 V140" style="stroke:var(--violet);stroke-dasharray:5 4;fill:none;stroke-width:1.4" marker-end="url(#ah)"/>
+          <text x="944" y="192" text-anchor="end" class="sm vio">target ε</text>
+          <text x="470" y="220" text-anchor="middle" class="sm mu">xₖ = √ᾱₖ · x₀ + √(1 − ᾱₖ) · ε  (cosine schedule)</text>
+          <path d="M0,238 H1000" style="stroke:var(--line)"/>
+
+          <!-- b: one block -->
+          <text x="8" y="266" class="ttl"><tspan class="acc">b</tspan>  Inside one NOMAD block (16 identical blocks)</text>
+          <rect x="40" y="282" width="176" height="24" rx="12" style="fill:var(--violet-soft)"/>
+          <text x="128" y="298" text-anchor="middle" class="sm vio">LayerNorm + FiLM(t, c)</text>
+          <text x="40" y="330" class="sm mu">time → one token per 20 ms</text>
+          <text transform="translate(28,400) rotate(-90)" text-anchor="middle" class="sm mu">electrodes</text>
+          <g id="arch-grid"></g>
+          <path d="M227,340 L352,368 M227,460 L352,440" style="stroke:var(--warm);stroke-dasharray:4 3;fill:none"/>
+          <rect x="362" y="300" width="66" height="26" rx="6" class="box"/>
+          <text x="395" y="318" text-anchor="middle" class="sm">φ(pₑ)</text>
+          <path class="ln" d="M395,326 V340"/>
+          <g data-scalp="395,400,56,m19,1"></g>
+          <path class="ln" d="M453,400 H462 V365 H470 M462,400 V443 H470"/>
+          <rect x="470" y="350" width="46" height="30" rx="6" class="box" style="stroke:var(--green)"/>
+          <text x="493" y="370" text-anchor="middle" class="sm grn">σ(g)</text>
+          <rect x="470" y="428" width="46" height="30" rx="6" class="box" style="stroke:var(--green)"/>
+          <text x="493" y="447" text-anchor="middle" class="sm grn">tanh(f)</text>
+          <path d="M516,365 H545 V390 M516,443 H545 V414" style="stroke:var(--green);fill:none;stroke-width:1.4"/>
+          <circle cx="545" cy="402" r="11" class="box" style="stroke:var(--green)"/>
+          <text x="545" y="407" text-anchor="middle" class="grn">×</text>
+          <text x="566" y="407" class="grn b">u</text>
+          <path class="ln" d="M578,396 L596,378" marker-end="url(#ah)"/><text x="598" y="376" class="sm mu">next block</text>
+          <path class="ln" d="M578,410 L596,428" marker-end="url(#ah)"/><text x="598" y="440" class="sm mu">skip sum</text>
+          <text x="170" y="498" text-anchor="middle" class="acc b">S4D along time</text>
+          <text x="170" y="516" text-anchor="middle" class="sm mu">one kernel spans the whole segment,</text>
+          <text x="170" y="532" text-anchor="middle" class="sm mu">same weights for every electrode</text>
+          <text x="395" y="498" text-anchor="middle" class="wrm b">Electrode attention</text>
+          <text x="395" y="516" text-anchor="middle" class="sm mu">each 20 ms step attends across</text>
+          <text x="395" y="532" text-anchor="middle" class="sm mu">electrodes, tokens carry φ(pₑ)</text>
+          <text x="560" y="498" text-anchor="middle" class="grn b">Gated output</text>
+          <text x="560" y="516" text-anchor="middle" class="sm mu">u = σ(g) ⊙ tanh(f)</text>
+          <text x="560" y="532" text-anchor="middle" class="sm mu">residual + skip</text>
+          <path d="M650,254 V546" style="stroke:var(--line)"/>
+
+          <!-- c: downstream -->
+          <text x="664" y="266" class="ttl"><tspan class="acc">c</tspan>  Downstream (clean input)</text>
+          <path class="w-acc" data-w="664,292,44,3,1,0"/><path class="w-acc" data-w="664,304,44,3,2,0"/><path class="w-acc" data-w="664,316,44,3,3,0"/>
+          <path class="ln" d="M712,304 H726" marker-end="url(#ah)"/>
+          <g id="arch-blocks"></g>
+          <text x="842" y="342" text-anchor="middle" class="sm grn">gates of blocks 4, 8, 12, 16</text>
+          <path class="ln" d="M842,348 V358 H745 V372 M842,358 H920 V372" />
+          <path class="ln" d="M745,368 V376" marker-end="url(#ah)"/><path class="ln" d="M920,368 V376" marker-end="url(#ah)"/>
+          <text x="745" y="394" text-anchor="middle" class="b">frozen probe</text>
+          <text x="745" y="412" text-anchor="middle" class="sm mu">mean over electrodes</text>
+          <g id="arch-windows"></g>
+          <text x="745" y="456" text-anchor="middle" class="sm mu">5 windows: mean, std</text>
+          <rect x="690" y="464" width="110" height="9" rx="2" style="fill:none;stroke:var(--green)"/>
+          <text x="745" y="490" text-anchor="middle" class="sm grn">10,240-d vector</text>
+          <rect x="690" y="502" width="110" height="30" rx="6" style="fill:var(--green-soft)"/>
+          <text x="745" y="522" text-anchor="middle" class="sm">linear classifier</text>
+          <text x="920" y="394" text-anchor="middle" class="b">fine-tuning</text>
+          <text x="920" y="412" text-anchor="middle" class="sm mu">E × 25 tokens</text>
+          <g id="arch-tokens"></g>
+          <text x="920" y="494" text-anchor="middle" class="sm mu">attention pooling</text>
+          <rect x="865" y="502" width="110" height="30" rx="6" style="fill:var(--green-soft)"/>
+          <text x="920" y="522" text-anchor="middle" class="sm">class logits</text>
+        </svg>
+      </div>
+      <p class="archcap">(a) A clean 30 s window is corrupted with Gaussian noise, and the network predicts the noise from the noisy signal, the electrode positions, the noise level and the corpus. A convolutional stem shared by all electrodes gives one 256-dimensional token every 20 ms. (b) In every block, an S4D layer filters each electrode's row along time; attention then mixes each time step across electrodes, which are identified only by Fourier features of their 3D positions. (c) Downstream, the gated activations of four blocks are read either by a frozen linear probe or by a fine-tuned attention head.</p>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="stack">
+        <p class="eyebrow">How it works</p>
+        <h2>Any number of electrodes, one fixed-size output</h2>
+        <p style="color:var(--muted)">Pick a montage from the paper's datasets and follow one recording through the network. The electrode names, token rate and output size are the model's own; the signals are illustrative and the scalp layout is schematic.</p>
+      </div>
+      <div class="flow">
+        <div class="flow-bar">
+          <div class="chips" role="group" aria-label="Montage" id="flow-montages"></div>
+          <div class="flow-ctl">
+            <button class="chip" id="flow-prev" type="button">Back</button>
+            <button class="chip" id="flow-play" type="button">Pause</button>
+            <button class="chip" id="flow-next" type="button">Next</button>
+          </div>
+        </div>
+        <canvas id="flow-canvas" aria-label="Animation of a recording passing through NOMAD-EEG, step by step"></canvas>
+        <ol class="flow-steps" id="flow-steps"></ol>
+        <div class="flow-cap" aria-live="polite"><h3 id="flow-title"></h3><p id="flow-text"></p></div>
+      </div>
     </div>
   </section>
 
@@ -243,9 +405,11 @@ footer .wrap { padding-block: 28px; display: flex; justify-content: space-betwee
         <article class="card"><span class="task">EEGMMIDB · motor imagery, 4 classes, 64 electrodes</span><span class="val num">0.442<small>bal. acc.</small></span><p>Best of eight models. Next: DiffEEG 0.418, REVE 0.371.</p></article>
         <article class="card"><span class="task">Siena · seizure detection</span><span class="val num">0.622<small>macro F1</small></span><p>Best of eight models. Next: REVE 0.562, EEGDM 0.534.</p></article>
         <article class="card"><span class="task">Bonn · seizure detection, single channel</span><span class="val num">0.999<small>AUROC</small></span><p>Best of eight models. REVE 0.998, CBraMod 0.996.</p></article>
+        <article class="card"><span class="task">TUSZ · seizure detection, fine-tuned</span><span class="val num">0.676<small>macro F1</small></span><p>After fine-tuning, above every model's frozen probe (best: EEGDM 0.642). As a frozen probe NOMAD-EEG ranks third.</p></article>
         <article class="card"><span class="task">TUEP · epilepsy diagnosis, 200 patients</span><span class="val num">0.640<small>accuracy</small></span><p>Highest accuracy and macro F1 of the seven models compared, at the patient level.</p></article>
         <article class="card"><span class="task">TUEV · six EEG event classes</span><span class="val num">0.635<small>Cohen κ</small></span><p>After fine-tuning, the highest κ and weighted F1 (0.814). The baselines were evaluated as frozen probes.</p></article>
         <article class="card"><span class="task">BCIAUT-P300 · autism, unseen 8-electrode cap</span><span class="val num">0.718<small>AUROC</small></span><p>Best of five models. Picks the attended object in 75.5% of blocks after ten runs (EEGDM 61.2%).</p></article>
+        <article class="card"><span class="task">Mumtaz · only 5 of 19 electrodes</span><span class="val num">0.891<small>mean AUROC</small></span><p>Down from 0.942 with all 19, using the probe trained on the full montage. Electrode order changes no prediction.</p></article>
       </div>
     </div>
   </section>
@@ -525,6 +689,312 @@ document.getElementById("copy").addEventListener("click", e => {
   if (reduce) { draw(performance.now()); return; }
   setInterval(() => { k = (k + 1) % MONT.length; }, 2600);
   (function loop(now) { draw(now); requestAnimationFrame(loop); })(performance.now());
+})();
+</script>
+
+<script>
+// ---- electrode layout shared by the architecture figure and the walkthrough.
+// Schematic 2D positions from 10-20 / 10-10 names: row letter -> front-back, number -> left (odd) / right (even).
+const ALIAS = { T3: "T7", T4: "T8", T5: "P7", T6: "P8" };
+const ROWS = { FP: [0.9, 1], AF: [0.71, 4], F: [0.5, 4], FT: [0.26, 4], FC: [0.26, 4], T: [0, 4], C: [0, 4],
+               TP: [-0.26, 4], CP: [-0.26, 4], P: [-0.5, 4], PO: [-0.71, 4], O: [-0.9, 1], I: [-1.02, 1] };
+function pos(name) {
+  let n = name.toUpperCase();
+  if (n.includes("-")) { const [a, b] = n.split("-"); const p = pos(a), q = pos(b); return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2]; }
+  if (n === "A1" || n === "A2") return [n === "A1" ? -1.1 : 1.1, -0.05];
+  n = ALIAS[n] || n;
+  const m = n.match(/^([A-Z]+?)(Z|\d+)$/), [y, kmax] = ROWS[m[1]];
+  if (m[2] === "Z") return [0, y];
+  const num = +m[2], k = Math.ceil(num / 2), r = Math.sqrt(Math.max(0, 1 - y * y));
+  return [(num % 2 ? -1 : 1) * r * k / kmax, y];
+}
+const M19 = ["FP1", "F3", "C3", "P3", "O1", "F7", "T3", "T5", "FZ", "FP2", "F4", "C4", "P4", "O2", "F8", "T4", "T6", "CZ", "PZ"];
+const M21 = ["FP1", "FP2", "F3", "F4", "C3", "C4", "P3", "P4", "O1", "O2", "F7", "F8", "T3", "T4", "T5", "T6", "A1", "A2", "FZ", "CZ", "PZ"];
+const M64 = ["FC5", "FC3", "FC1", "FCZ", "FC2", "FC4", "FC6", "C5", "C3", "C1", "CZ", "C2", "C4", "C6", "CP5", "CP3", "CP1", "CPZ",
+             "CP2", "CP4", "CP6", "FP1", "FPZ", "FP2", "AF7", "AF3", "AFZ", "AF4", "AF8", "F7", "F5", "F3", "F1", "FZ", "F2", "F4", "F6",
+             "F8", "FT7", "FT8", "T7", "T8", "T9", "T10", "TP7", "TP8", "P7", "P5", "P3", "P1", "PZ", "P2", "P4", "P6", "P8", "PO7",
+             "PO3", "POZ", "PO4", "PO8", "O1", "OZ", "O2", "IZ"];
+
+// ---- architecture figure: waveforms, scalps and token grids
+(function () {
+  const NS = "http://www.w3.org/2000/svg", svg = document.getElementById("arch");
+  const el = (tag, at, parent) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); (parent || svg).appendChild(e); return e; };
+  svg.querySelectorAll("[data-w]").forEach(p => {
+    const [x, y, w, amp, seed, jag] = p.dataset.w.split(",").map(Number);
+    let d = "";
+    for (let i = 0; i <= 60; i++) {
+      const v = Math.sin(i * 0.35 + seed) * 0.6 + Math.sin(i * 0.9 + seed * 2) * 0.3 + (jag ? Math.sin(i * 2.7 + seed * 5) * 0.7 : 0);
+      d += (i ? "L" : "M") + (x + w * i / 60).toFixed(1) + "," + (y + v * amp).toFixed(1);
+    }
+    p.setAttribute("d", d);
+  });
+  svg.querySelectorAll("[data-scalp]").forEach(g => {
+    const [cx, cy, R, set, focus] = g.dataset.scalp.split(",");
+    const X = +cx, Y = +cy, r = +R, names = set === "m21" ? M21 : M19;
+    el("ellipse", { cx: X - r - 3, cy: Y, rx: 4, ry: 10, class: "head" }, g);
+    el("ellipse", { cx: X + r + 3, cy: Y, rx: 4, ry: 10, class: "head" }, g);
+    el("path", { d: `M${X - 7},${Y - r + 2} L${X},${Y - r - 9} L${X + 7},${Y - r + 2}`, class: "head" }, g);
+    el("circle", { cx: X, cy: Y, r: r, class: "head" }, g);
+    const pts = names.map(n => { const [x, y] = pos(n); return [X + x * r * 0.84, Y - y * r * 0.84]; });
+    const f = names.indexOf("CZ");
+    if (focus === "1") pts.forEach((p, i) => { if (i !== f) el("path", { d: `M${pts[f][0]},${pts[f][1]} L${p[0]},${p[1]}`, style: "stroke:var(--warm);stroke-width:1;opacity:.6" }, g); });
+    pts.forEach((p, i) => el("circle", { cx: p[0], cy: p[1], r: focus === "1" && i === f ? 4.5 : 3.2,
+      style: `fill:var(${focus === "1" ? (i === f ? "--violet" : "--warm") : "--accent"})` }, g));
+  });
+  const grid = document.getElementById("arch-grid");
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 18; c++) {
+    const hr = r === 3, hc = c === 12;
+    el("rect", { x: 40 + c * 14.4, y: 340 + r * 15, width: 13, height: 13.5, rx: 1.5,
+      style: `fill:var(${hr && hc ? "--violet" : hc ? "--warm" : hr ? "--accent" : "--line"});opacity:${hr || hc ? (hr && hc ? 0.85 : 0.4) : 0.55}` }, grid);
+  }
+  const wv = el("path", { class: "w-acc", style: "stroke-width:1.8" }, grid);
+  let d = ""; for (let i = 0; i <= 60; i++) d += (i ? "L" : "M") + (40 + 258 * i / 60).toFixed(1) + "," + (392 + Math.sin(i * 0.3) * 4 + Math.sin(i * 0.8) * 2).toFixed(1);
+  wv.setAttribute("d", d);
+  const blocks = document.getElementById("arch-blocks");
+  for (let i = 0; i < 16; i++) el("rect", { x: 730 + i * 14, y: 286, width: 11, height: 38, rx: 2,
+    style: `fill:var(${[3, 7, 11, 15].includes(i) ? "--green" : "--accent-soft"})` }, blocks);
+  const win = document.getElementById("arch-windows");
+  for (let i = 0; i < 5; i++) {
+    el("rect", { x: 693 + i * 21, y: 420, width: 18, height: 10, style: "fill:var(--green);opacity:" + (0.35 + i * 0.13) }, win);
+    el("path", { d: `M${702 + i * 21},${434} V${442 + (i % 2) * 3}`, style: "stroke:var(--green);stroke-width:1.6" }, win);
+    el("circle", { cx: 702 + i * 21, cy: 434 + (i % 3), r: 2.6, style: "fill:var(--green)" }, win);
+  }
+  const tok = document.getElementById("arch-tokens");
+  const hot = [[0, 2], [1, 6], [2, 1], [3, 8], [1, 4]];
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 10; c++) {
+    const h = hot.some(([a, b]) => a === r && b === c);
+    el("rect", { x: 870 + c * 10, y: 420 + r * 8, width: 8.5, height: 6.5, style: `fill:var(${h ? "--green" : "--green-soft"})` }, tok);
+  }
+  hot.forEach(([r, c]) => el("path", { d: `M${874 + c * 10},${426 + r * 8} L920,474`, style: "stroke:var(--green);stroke-width:1;opacity:.8" }, tok));
+  el("path", { d: "M920,468 L926,476 L920,484 L914,476 z", style: "fill:var(--green)" }, tok);
+})();
+
+// ---- walkthrough animation
+(function () {
+  const MONT = [
+    { name: "Bonn", label: "1 channel", ch: ["FP1"] },
+    { name: "Sleep-EDF", label: "2 bipolar", ch: ["FPZ-CZ", "PZ-OZ"] },
+    { name: "BCIAUT-P300", label: "8 electrodes", ch: ["C3", "CZ", "C4", "CPZ", "P3", "PZ", "P4", "POZ"] },
+    { name: "Mumtaz", label: "19 electrodes", ch: M19 },
+    { name: "EEGMMIDB", label: "64 electrodes", ch: M64 },
+  ];
+  const STAGES = [
+    { s: "Positions", t: "Electrodes become points in 3D", d: "Each channel is located by its standard 10-20 / 10-05 name and gets a 3D scalp coordinate. A bipolar channel sits at the midpoint of its two electrodes. Nothing else identifies an electrode: there are no channel slots to fill.", dur: 3000 },
+    { s: "Shared stem", t: "One stem for every electrode", d: "The same convolution turns each electrode's signal (200 Hz) into one 256-dimensional token every 20 ms. E electrodes simply give E rows of tokens, whatever E is.", dur: 3000 },
+    { s: "Time mixing", t: "S4D filters each row along time", d: "In every block a state-space layer filters each electrode's row. Its kernel spans the whole segment, so any recording length works without patches, and the weights are the same for every electrode.", dur: 3400 },
+    { s: "Electrode attention", t: "Each time step attends across electrodes", d: "The column of tokens at each 20 ms step attends across electrodes; each token carries a Fourier embedding of its 3D position. Attention works on a set, so the number and the order of electrodes do not matter.", dur: 3600 },
+    { s: "16 blocks", t: "Repeated in 16 identical blocks", d: "Time mixing and electrode attention alternate 16 times. The gated activations of blocks 4, 8, 12 and 16 are kept as features.", dur: 3000 },
+    { s: "Readout", t: "A fixed-size vector for any montage", d: "Features are averaged over electrodes, then their mean and standard deviation are taken in 5 time windows: 4 blocks × 256 × 2 × 5 = 10,240 numbers, the same length for 1 or 64 electrodes. A linear probe reads this vector; fine-tuning uses an attention head over the per-electrode tokens instead.", dur: 4400 },
+  ];
+  const NC = 36;
+  const cv = document.getElementById("flow-canvas"), ctx = cv.getContext("2d");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let W = 0, H = 0, mi = 3, st = 0, t = 0, playing = !reduce, last = performance.now();
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const ease = x => x < 0 ? 0 : x > 1 ? 1 : x * x * (3 - 2 * x);
+  const lerp = (a, b, q) => a + (b - a) * q;
+  const val = (r, c, k) => 0.5 + 0.5 * Math.sin(r * 1.7 + c * 0.45 + k * 0.9) * Math.cos(c * 0.21 - r * 0.6 + k * 0.4);
+  const sig = (r, x) => Math.sin(x * 0.09 + r * 1.3) * 0.5 + Math.sin(x * 0.23 + r * 2.1) * 0.3 + Math.sin(x * 0.61 + r * 0.7) * 0.2;
+
+  // controls
+  const mBox = document.getElementById("flow-montages"), sBox = document.getElementById("flow-steps");
+  MONT.forEach((m, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.id = "flow-m-" + i;
+    b.innerHTML = `${m.label}<small>${m.name}</small>`;
+    b.addEventListener("click", () => { mi = i; st = 0; t = playing ? 0 : STAGES[0].dur * 0.9; ui(); });
+    mBox.appendChild(b);
+  });
+  STAGES.forEach((s, i) => {
+    const li = document.createElement("li"), b = document.createElement("button");
+    b.type = "button"; b.id = "flow-s-" + i; b.textContent = `${i + 1}. ${s.s}`;
+    b.addEventListener("click", () => { st = i; t = playing ? 0 : s.dur * 0.9; ui(); });
+    li.appendChild(b); sBox.appendChild(li);
+  });
+  const play = document.getElementById("flow-play");
+  play.addEventListener("click", () => { playing = !playing; if (!playing) t = Math.max(t, STAGES[st].dur * 0.9); ui(); });
+  document.getElementById("flow-prev").addEventListener("click", () => { st = (st + 5) % 6; t = playing ? 0 : STAGES[st].dur * 0.9; ui(); });
+  document.getElementById("flow-next").addEventListener("click", () => { st = (st + 1) % 6; t = playing ? 0 : STAGES[st].dur * 0.9; ui(); });
+  function ui() {
+    MONT.forEach((_, i) => document.getElementById("flow-m-" + i).setAttribute("aria-pressed", i === mi));
+    STAGES.forEach((_, i) => { const b = document.getElementById("flow-s-" + i); i === st ? b.setAttribute("aria-current", "step") : b.removeAttribute("aria-current"); });
+    document.getElementById("flow-title").textContent = `${st + 1}. ${STAGES[st].t}`;
+    document.getElementById("flow-text").textContent = STAGES[st].d;
+    play.textContent = playing ? "Pause" : "Play";
+  }
+
+  function size() {
+    const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+    W = r.width; H = r.height; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function draw() {
+    const C = { ink: css("--ink"), mu: css("--muted"), line: css("--line"), acc: css("--accent"), warm: css("--warm"),
+                grn: css("--green"), vio: css("--violet"), surf: css("--surface") };
+    const m = MONT[mi], E = m.ch.length, P = m.ch.map(pos), S = STAGES[st], p = Math.min(1, t / S.dur);
+    const wide = W >= 700, font = s => `${s}px "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif`;
+    const sc = wide ? { x: W * 0.13, y: H * 0.5, R: Math.min(W * 0.095, H * 0.33) } : { x: W / 2, y: H * 0.13, R: Math.min(W * 0.2, H * 0.09) };
+    const g = wide ? { x: W * 0.3, y: H * 0.13, w: W * 0.44, h: H * 0.74 } : { x: W * 0.04, y: H * 0.31, w: W * 0.92, h: H * 0.29 };
+    const o = wide ? { x: W * 0.79, y: H * 0.13, w: W * 0.2, h: H * 0.74 } : { x: W * 0.04, y: H * 0.66, w: W * 0.92, h: H * 0.32 };
+    ctx.clearRect(0, 0, W, H);
+    ctx.lineCap = "round"; ctx.textBaseline = "alphabetic";
+
+    // scalp
+    ctx.strokeStyle = C.mu; ctx.lineWidth = 1.4; ctx.globalAlpha = 1;
+    ctx.beginPath(); ctx.ellipse(sc.x - sc.R - 4, sc.y, 5, sc.R * 0.22, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(sc.x + sc.R + 4, sc.y, 5, sc.R * 0.22, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sc.x - 8, sc.y - sc.R + 2); ctx.lineTo(sc.x, sc.y - sc.R - 11); ctx.lineTo(sc.x + 8, sc.y - sc.R + 2); ctx.stroke();
+    ctx.fillStyle = C.surf; ctx.beginPath(); ctx.arc(sc.x, sc.y, sc.R, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    const px = q => [sc.x + q[0] * sc.R * 0.84, sc.y - q[1] * sc.R * 0.84];
+    const shown = st === 0 ? Math.ceil(ease(p * 1.5) * E) : E;
+    const focus = st === 3 ? Math.floor(Math.floor(p * Math.min(E, 6) * 0.999) * E / Math.min(E, 6)) : -1;
+    if (focus >= 0 && E > 1) {
+      ctx.strokeStyle = C.warm; ctx.lineWidth = 1; ctx.globalAlpha = 0.55;
+      const f = px(P[focus]);
+      P.forEach((q, i) => { if (i === focus) return; const [x, y] = px(q); ctx.beginPath(); ctx.moveTo(f[0], f[1]); ctx.lineTo(x, y); ctx.stroke(); });
+      ctx.globalAlpha = 1;
+    }
+    const dotR = E > 30 ? 3 : 4.6;
+    for (let i = 0; i < shown; i++) {
+      const name = m.ch[i];
+      if (name.includes("-")) {                       // bipolar: two hollow electrodes, filled midpoint
+        const [a, b] = name.split("-").map(pos).map(px);
+        ctx.strokeStyle = C.mu; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.setLineDash([]);
+        [a, b].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.stroke(); });
+      }
+      const [x, y] = px(P[i]);
+      ctx.fillStyle = i === focus ? C.vio : st === 3 && E > 1 ? C.warm : C.acc;
+      ctx.beginPath(); ctx.arc(x, y, i === focus ? dotR + 2 : dotR, 0, Math.PI * 2); ctx.fill();
+      if (E <= 19 && sc.R > 60) { ctx.fillStyle = C.mu; ctx.font = font(10); ctx.fillText(name, x + 6, y - 5); }
+    }
+    ctx.fillStyle = C.mu; ctx.font = font(12); ctx.textAlign = "center";
+    ctx.fillText(`${m.name} · ${m.label}`, sc.x, sc.y + sc.R + (wide ? 30 : 24));
+    ctx.textAlign = "left";
+
+    // token grid
+    const rh = Math.min(g.h / E, 26), gh = rh * E, y0 = g.y + (g.h - gh) / 2, cw = g.w / NC;
+    const block = st === 4 ? 1 + Math.floor(p * 15.999) : st > 4 ? 16 : 1;
+    ctx.fillStyle = C.mu; ctx.font = font(12);
+    ctx.fillText(st === 0 ? "signals, resampled to 200 Hz" : "time → one 256-d token per 20 ms", g.x, y0 - 12);
+    ctx.textAlign = "right"; ctx.fillText(`E = ${E}`, g.x + g.w, y0 - 12); ctx.textAlign = "left";
+    if (st === 4) {
+      ctx.fillStyle = C.acc; ctx.font = `600 ${font(13)}`;
+      ctx.fillText(`block ${block} / 16`, g.x + g.w / 2 - 40, y0 - 12);
+    }
+    const merge = st === 5 ? ease(p / 0.35) : 0;
+    const mh = Math.max(14, Math.min(26, rh)), my = y0 + gh / 2 - mh / 2;
+    const filled = st === 0 ? 0 : st === 1 ? Math.floor(ease(p * 1.2) * NC) : NC;
+    if (merge < 1) {
+      for (let r = 0; r < E; r++) {
+        const yy = lerp(y0 + r * rh, my, merge), hh = lerp(rh, mh, merge);
+        for (let c = 0; c < filled; c++) {
+          ctx.globalAlpha = (0.12 + 0.55 * val(r, c, block)) * (1 - merge * 0.75);
+          ctx.fillStyle = C.acc;
+          const ins = cw > 6 && hh > 5 ? 1 : 0;
+          ctx.fillRect(g.x + c * cw + ins, yy + ins, cw - 2 * ins, hh - 2 * ins);
+        }
+        // raw trace for the part not yet embedded
+        if (st <= 1) {
+          const xs = g.x + filled * cw, xe = st === 0 ? g.x + ease(p * 1.3) * g.w : g.x + g.w, amp = Math.min(rh * 0.38, 10);
+          ctx.globalAlpha = 1; ctx.strokeStyle = C.acc; ctx.lineWidth = E > 30 ? 0.8 : 1.3;
+          ctx.beginPath();
+          for (let x = xs; x <= xe; x += 2) { const v = yy + hh / 2 + sig(r, x - g.x) * amp; x === xs ? ctx.moveTo(x, v) : ctx.lineTo(x, v); }
+          ctx.stroke();
+        }
+        if (E <= 19 && wide && merge === 0) {
+          ctx.globalAlpha = 1; ctx.fillStyle = C.mu; ctx.font = font(10); ctx.textAlign = "right";
+          ctx.fillText(m.ch[r], g.x - 6, yy + hh / 2 + 3.5); ctx.textAlign = "left";
+        }
+      }
+    } else {                                           // merged: mean over electrodes, then 5 windows
+      for (let c = 0; c < NC; c++) {
+        let v = 0; for (let r = 0; r < E; r++) v += val(r, c, 16); v /= E;
+        ctx.globalAlpha = 0.15 + 0.7 * v; ctx.fillStyle = C.acc;
+        ctx.fillRect(g.x + c * cw + 1, my, cw - 2, mh);
+      }
+      const wq = ease((p - 0.35) / 0.25);
+      ctx.globalAlpha = wq; ctx.strokeStyle = C.grn; ctx.lineWidth = 2;
+      for (let w = 0; w < 5; w++) ctx.strokeRect(g.x + w * g.w / 5 + 2, my - 4, g.w / 5 - 4, mh + 8);
+      ctx.fillStyle = C.grn; ctx.font = font(12);
+      ctx.fillText("mean over electrodes → 5 time windows", g.x, my + mh + 26);
+    }
+    ctx.globalAlpha = 1;
+
+    // stage overlays
+    if (st === 2) {                                    // S4D: kernel sweeps along every row
+      const bc = lerp(-3, NC + 3, p);
+      ctx.fillStyle = C.acc;
+      for (let r = 0; r < E; r++) {
+        ctx.globalAlpha = 0.1; ctx.fillRect(g.x, y0 + r * rh, g.w, rh);
+        ctx.globalAlpha = 0.6;
+        const xa = g.x + Math.max(0, bc - 1.5) * cw, xb = g.x + Math.min(NC, bc + 1.5) * cw;
+        if (xb > xa) ctx.fillRect(xa, y0 + r * rh + (rh > 4 ? 1 : 0), xb - xa, Math.max(1, rh - (rh > 4 ? 2 : 0)));
+      }
+      ctx.globalAlpha = 1;
+    }
+    if (st === 3) {                                    // attention: one column at a time
+      const c = Math.min(NC - 1, Math.floor(p * NC));
+      ctx.globalAlpha = 0.45; ctx.fillStyle = C.warm; ctx.fillRect(g.x + c * cw, y0, cw, gh);
+      if (E > 1 && E <= 19) {
+        const fy = y0 + focus * rh + rh / 2, cx = g.x + c * cw + cw / 2;
+        ctx.globalAlpha = 0.8; ctx.strokeStyle = C.warm; ctx.lineWidth = 1.2;
+        for (let r = 0; r < E; r++) {
+          if (r === focus) continue;
+          const ry = y0 + r * rh + rh / 2;
+          ctx.beginPath(); ctx.moveTo(cx, fy); ctx.quadraticCurveTo(cx + cw * 2 + Math.abs(ry - fy) * 0.25, (fy + ry) / 2, cx, ry); ctx.stroke();
+        }
+        ctx.globalAlpha = 1; ctx.fillStyle = C.vio; ctx.fillRect(g.x + c * cw, y0 + focus * rh, cw, rh);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // fixed-size output
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+    ctx.strokeRect(o.x, o.y, o.w, o.h); ctx.setLineDash([]);
+    ctx.fillStyle = C.mu; ctx.font = font(12);
+    ctx.fillText("fixed-size output", o.x + 10, o.y + 20);
+    if (st === 5) {
+      const q = ease((p - 0.45) / 0.3), v = ease((p - 0.72) / 0.22);
+      const rows = 5, bh = wide ? 16 : 10, gap = wide ? 12 : 6, top = o.y + 36;
+      const bw = (o.w - 40) / 2;
+      ctx.font = font(11);
+      for (let w = 0; w < rows; w++) {
+        const yy = top + w * (bh + gap);
+        let mean = 0; for (let c = w * NC / 5; c < (w + 1) * NC / 5; c++) for (let r = 0; r < E; r++) mean += val(r, c, 16);
+        mean /= E * NC / 5;
+        ctx.globalAlpha = q; ctx.fillStyle = C.grn;
+        ctx.fillRect(o.x + 30, yy, bw * (0.3 + 0.7 * mean) * q, bh);
+        ctx.globalAlpha = q * 0.45;
+        ctx.fillRect(o.x + 34 + bw, yy, bw * (0.25 + 0.5 * (1 - mean)) * q, bh);
+        ctx.globalAlpha = q; ctx.fillStyle = C.mu; ctx.fillText(`w${w + 1}`, o.x + 8, yy + bh - 3);
+      }
+      const vy = top + rows * (bh + gap) + (wide ? 18 : 6);
+      ctx.globalAlpha = q; ctx.fillStyle = C.mu;
+      ctx.fillText("mean", o.x + 30, top - 6); ctx.fillText("std", o.x + 34 + bw, top - 6);
+      ctx.globalAlpha = v; ctx.fillStyle = C.grn;
+      ctx.fillRect(o.x + 10, vy, (o.w - 20) * v, 12);
+      ctx.fillStyle = C.ink; ctx.font = `600 ${font(14)}`;
+      ctx.fillText("10,240 numbers", o.x + 10, vy + 34);
+      ctx.fillStyle = C.mu; ctx.font = font(12);
+      ctx.fillText(`same length for E = ${E}`, o.x + 10, vy + 52);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function frame(now) {
+    const dt = Math.min(100, now - last); last = now;
+    if (playing && !document.hidden) {
+      t += dt;
+      if (t >= STAGES[st].dur) { t = 0; st++; if (st === STAGES.length) { st = 0; mi = (mi + 1) % MONT.length; } ui(); }
+    }
+    draw();
+    requestAnimationFrame(frame);
+  }
+  if (!playing) t = STAGES[0].dur * 0.9;
+  size(); ui(); draw();
+  addEventListener("resize", () => { size(); draw(); });
+  requestAnimationFrame(frame);
 })();
 </script>
 </body>

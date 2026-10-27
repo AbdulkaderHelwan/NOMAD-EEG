@@ -20,6 +20,7 @@ DiffEEG), all run by us under one protocol.
 | EEGMMIDB motor imagery (4 classes, 64 electrodes) | Balanced accuracy | **0.442** | DiffEEG 0.418 |
 | Siena seizure detection | Macro F1 | **0.622** | REVE 0.562 |
 | Bonn seizure detection (single channel) | AUROC | **0.999** | REVE 0.998 |
+| TUSZ seizure detection, fine-tuned | Macro F1 | **0.676** | EEGDM 0.642 (frozen) |
 | TUEP epilepsy diagnosis (200 patients) | Patient accuracy | **0.640** | BIOT 0.630 |
 | TUEV event classification, fine-tuned | Cohen κ / weighted F1 | **0.635 / 0.814** | EEGDM 0.568 / 0.783 (frozen) |
 | BCIAUT-P300, autism, unseen 8-electrode cap | AUROC | **0.718** | EEGDM 0.667 |
